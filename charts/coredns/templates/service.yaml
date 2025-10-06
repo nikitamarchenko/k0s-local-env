@@ -1,0 +1,45 @@
+{{- if eq .Values.dnsIp "" }}
+{{- fail ".Values.dnsIp is mandatory" }}
+{{- end }}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "common.names.fullname" . }}-udp
+  annotations:
+    metallb.io/loadBalancerIPs: {{.Values.dnsIp | quote }}
+    metallb.io/allow-shared-ip: "dns"
+  labels:
+    {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4}}
+spec:
+  selector:
+    {{- include "common.labels.matchLabels" . | nindent 4 }}
+    app.kubernetes.io/component: coredns
+  ports:
+    - name: dns
+      port: 53
+      protocol: UDP
+      targetPort: 53
+  type: LoadBalancer
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "common.names.fullname" . }}-tcp
+  annotations:
+    metallb.io/loadBalancerIPs: {{.Values.dnsIp | quote }}
+    metallb.io/allow-shared-ip: "dns"
+  labels:
+    {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4}}
+spec:
+  selector:
+    {{- include "common.labels.matchLabels" . | nindent 4 }}
+    app.kubernetes.io/component: coredns
+  ports:
+    - name: dns
+      port: 53
+      protocol: TCP
+      targetPort: 53
+  type: LoadBalancer

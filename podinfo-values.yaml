@@ -1,0 +1,16 @@
+ingress:
+  enabled: true
+  hosts: 
+    - host: podinfo.lb-ingress.k0s.internal
+      paths:
+        - path: "/"
+          pathType: "Prefix"
+  tls:
+  - hosts:
+    - podinfo.lb-ingress.k0s.internal
+    secretName: podinfo.lb-ingress.k0s.internal-tls
+  className: nginx
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: k0s-local-2-cert-root-ca-issuer
+    

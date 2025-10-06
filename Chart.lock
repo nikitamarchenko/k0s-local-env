@@ -1,0 +1,18 @@
+dependencies:
+- name: coredns
+  repository: ""
+  version: ~0.1.0
+- name: cert
+  repository: ""
+  version: ~0.1.0
+- name: metallb
+  repository: ""
+  version: ~0.1.0
+- name: image-registry
+  repository: ""
+  version: ~0.1.0
+- name: common
+  repository: https://charts.bitnami.com/bitnami
+  version: 2.31.4
+digest: sha256:d1d716b69959b3769b1dc7a845485b747e7218b6c71c871b51b6a0809c46073d
+generated: "2025-10-05T13:24:42.897607038+03:00"

@@ -1,0 +1,28 @@
+metallb:
+  # addresses is string array for IPAddressPoolSpec.addresses 
+  # more info https://metallb.io/configuration/_advanced_ipaddresspool_configuration/
+  # and https://metallb.io/apis/#ipaddresspoolspec
+  addresses:
+    - 192.168.123.2-192.168.123.254
+
+# coredns is config for custom coredns build with use k8s_external for provide 
+# external dns names for services. Rerwrite svc services names to ingress lb dns name.
+coredns:
+  # dnsIp is ip address of dns from pool metallb.addresses
+  dnsIp: 192.168.123.53
+  # ingressReleaseName helm release name of installed ingress-nginx
+  ingressReleaseName: ingress-nginx
+  # ingressReleaseNs helm release namespace of installed ingress-nginx
+  ingressReleaseNs: ingress-nginx
+  # ingressReleaseControllerName helm contrller name of installed ingress-nginx
+  # default values is "controller"
+  ingressReleaseControllerName:
+
+global:
+  k0sLocal:
+    # external svc hostname is https://<svc-name>.$lbIngressHostname.$dnsZone
+
+    # lbIngressHostname LB ingress hostname
+    lbIngressHostname: lb-ingress
+    # Dns zone
+    dnsZone: k0s.internal

@@ -1,0 +1,6 @@
+lbIngressHostname:
+dnsZone:
+dnsIp:
+ingressReleaseName: ingress-nginx
+ingressReleaseNs: ingress-nginx
+ingressReleaseControllerName:

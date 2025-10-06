@@ -1,0 +1,75 @@
+# https://taskfile.dev
+
+version: "3"
+
+dotenv: [".env"]
+
+env:
+  HELM_RELEASE_NAME: k0s-local
+  HELM_RELEASE_NS: k0s-local
+
+vars:
+  OS_ID:
+    sh: awk -F= '/^ID=/ { print $2 }' /etc/os-release
+  
+tasks:
+  cert-manager/get-ca:
+    cmd: |
+      kubectl get secrets -n cert-manager {{ .HELM_RELEASE_NAME }}-cert-root-ca-secret -o yaml \
+      -o jsonpath="{.data.ca\.crt}" | \
+      base64 -d > {{ .HELM_RELEASE_NAME }}-cert-root-ca.crt
+
+  cert-manager/install-ca:
+    cmd: |
+      {{- if eq .OS_ID "debian" "ubuntu" -}}
+      sudo cp {{ .HELM_RELEASE_NAME }}-cert-root-ca.crt /usr/local/share/ca-certificates
+      sudo update-ca-certificates
+      {{- else if eq .OS_ID "arch" -}}
+      sudo trust anchor --store {{ .HELM_RELEASE_NAME }}-cert-root-ca.crt
+      {{- else -}}
+      echo "only arch, debian and ubuntu supported, current OS={{ .OS_ID }}"
+      {{- end -}}
+
+  cert-manager/uninstall-ca:
+    cmd: |
+      {{- if eq .OS_ID "debian" "ubuntu" -}}
+      sudo rm /usr/local/share/ca-certificates/{{ .HELM_RELEASE_NAME }}-cert-root-ca.crt 
+      sudo update-ca-certificates
+      {{- else if eq .OS_ID "arch" -}}
+      sudo trust anchor --remove {{ .HELM_RELEASE_NAME }}-cert-root-ca.crt
+      {{- else -}}
+      echo "only arch, debian and ubuntu supported, current OS={{ .OS_ID }}"
+      {{- end -}}
+
+  install:
+    deps: ["dependency/update"]
+    cmd: |
+      helm upgrade {{ .HELM_RELEASE_NAME }} . \
+        --namespace={{ .HELM_RELEASE_NS }} \
+        --create-namespace \
+        --install
+        {{.CLI_ARGS}}
+
+  dependency/update:
+    deps: ["image-registry/dependency/update"]
+    sources:
+      - ./Chart.yaml
+    cmd: helm dependency update .
+
+  image-registry/dependency/update:
+    sources:
+      - ./charts/image-registry/Chart.yaml
+    cmd: helm dependency update ./charts/image-registry/
+
+  k0s/uninstall:
+    cmds:
+      - sudo k0s stop
+      - sudo k0s reset
+      - sudo reboot -h now
+
+  k0s/install:
+    cmds:
+      - sudo k0s install controller --single -c k0s.yaml
+      - sudo k0s start
+      - sleep 2
+      - sudo cat /var/lib/k0s/pki/admin.conf > ~/.kube/config

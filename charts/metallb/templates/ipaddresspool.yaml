@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/refs/heads/main/metallb.io/addresspool_v1beta1.json
+
+{{- if not .Values.addresses }}
+{{- fail ".Values.addresses is mandatory" }}
+{{- end }}
+
+
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: first-pool
+  namespace: metallb
+  labels:
+    {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4}}
+spec:
+  protocol: layer2
+  addresses:
+  {{- .Values.addresses | toYaml | nindent 2 -}}

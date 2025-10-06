@@ -1,0 +1,56 @@
+
+{{- $lbIngressHostname := (.Values.lbIngressHostname | default .Values.global.k0sLocal.lbIngressHostname) | replace "." "\\." }}
+{{- if eq $lbIngressHostname "" }}
+{{- fail ".Values.lbIngressHostname is mandatory" }}
+{{- end }}
+
+{{- $dnsZone := (.Values.dnsZone | default .Values.global.k0sLocal.dnsZone) }}
+{{- if eq $dnsZone "" }}
+{{- fail ".Values.dnsZone is mandatory" }}
+{{- end }}
+
+{{- $ingressReleaseName := (.Values.ingressReleaseName | default .Values.global.k0sLocal.ingressReleaseName) }}
+{{- if eq $ingressReleaseName "" }}
+{{- fail ".Values.ingressReleaseName is mandatory" }}
+{{- end }}
+
+{{- $ingressReleaseNs := (.Values.ingressReleaseNs | default .Values.global.k0sLocal.ingressReleaseNs) }}
+{{- if eq $ingressReleaseNs "" }}
+{{- fail ".Values.ingressReleaseNs is mandatory" }}
+{{- end }}
+
+{{- $ingressReleaseControllerName := (.Values.ingressReleaseControllerName | default .Values.global.k0sLocal.ingressReleaseControllerName | default "controller" ) }}
+
+{{- $lbDnsName := printf "%s-%s.%s.%s" $ingressReleaseName $ingressReleaseControllerName $ingressReleaseNs $dnsZone }}
+{{- $regEx := printf "(.*)\\.%s\\.%s" $lbIngressHostname $dnsZone }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "common.names.fullname" . }}-coredns
+  labels:
+    {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4}}
+data:
+  Corefile: |
+    .:53 {
+        log
+        debug
+        errors
+        health
+        ready
+        rewrite stop {
+          name regex {{ $regEx }} {{ $lbDnsName }} answer auto
+        }
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+          pods insecure
+          ttl 30
+          fallthrough in-addr.arpa ip6.arpa
+        }
+        k8s_external {{ $dnsZone }}
+        prometheus :9153
+        forward . 1.1.1.1
+        cache 30
+        loop
+        reload
+        loadbalance
+    }

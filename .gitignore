@@ -1,0 +1,18 @@
+# Common VCS dirs
+*.swp
+*.bak
+*.tmp
+*.orig
+*~
+
+# Various IDEs
+.project
+.idea/
+*.tmproj
+.vscode/
+
+
+.task
+*.helm_ls_cache
+*.env
+*.crt

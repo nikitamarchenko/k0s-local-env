@@ -1,0 +1,6 @@
+docker-registry:
+  service:
+    port: 5000
+
+lbIngressHostname:
+dnsZone:

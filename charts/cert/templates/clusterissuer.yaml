@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/refs/heads/main/cert-manager.io/clusterissuer_v1.json
+
+{{/*
+The "root-ca-issuer-selfsigned" ClusterIssuer is used to issue the Root CA Certificate. 
+Then, "root-ca-issuer" Issuer is used to issue but also sign certificates 
+using the newly created Root CA Certificate, which is what you will use for 
+future certificates.
+*/}}
+
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ include "common.names.fullname" . }}-root-ca-issuer-selfsigned
+  labels:
+    {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4}}
+spec:
+  selfSigned: {}
+
+---
+
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ include "common.names.fullname" . }}-root-ca-issuer
+  labels:
+    {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4}}
+spec:
+  ca:
+    secretName: {{ include "common.names.fullname" . }}-root-ca-secret

@@ -1,0 +1,41 @@
+{{- $dockerregistry := index .Values "docker-registry" -}}
+
+{{- $lbIngressHostname := (.Values.lbIngressHostname | default .Values.global.k0sLocal.lbIngressHostname) | replace "." "\\." }}
+{{- if eq $lbIngressHostname "" }}
+{{- fail ".Values.lbIngressHostname is mandatory" }}
+{{- end }}
+
+{{- $dnsZone := (.Values.dnsZone | default .Values.global.k0sLocal.dnsZone) }}
+{{- if eq $dnsZone "" }}
+{{- fail ".Values.dnsZone is mandatory" }}
+{{- end }}
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "common.names.fullname" . }}
+  labels:
+    {{- include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) | nindent 4}}
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: "{{ .Release.Name }}-cert-root-ca-issuer"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - "image-regisry.{{ $lbIngressHostname }}.{{ $dnsZone }}"
+      secretName: {{ include "common.names.fullname" . }}-tls
+  rules:
+    - host: "image-regisry.{{ $lbIngressHostname }}.{{ $dnsZone }}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-docker-registry
+                port:
+                  number: {{ $dockerregistry.service.port }}
